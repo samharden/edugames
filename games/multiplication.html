@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Space Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .space-bg {
+            background-color: #0c0a1e;
+            background-image:
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+                radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px),
+                radial-gradient(rgba(255,255,255,.4), rgba(255,255,255,.1) 2px, transparent 30px);
+            background-size: 550px 550px, 350px 350px, 250px 250px, 150px 150px;
+            background-position: 0 0, 40px 60px, 130px 270px, 70px 100px;
+            animation: stars 200s linear infinite;
+        }
+        @keyframes stars {
+            from { background-position: 0 0, 40px 60px, 130px 270px, 70px 100px; }
+            to { background-position: -10000px 5000px, -10000px 5000px, -10000px 5000px, -10000px 5000px; }
+        }
+        .glass-panel {
+            background: rgba(25, 29, 78, 0.6);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-3d {
+            transition: all .15s ease-in-out;
+            box-shadow: 0 6px 0 0 #a23bce;
+        }
+        .btn-3d:hover {
+            transform: translateY(2px);
+            box-shadow: 0 4px 0 0 #a23bce;
+        }
+        .btn-3d:active {
+            transform: translateY(6px);
+            box-shadow: 0 0 0 0 #a23bce;
+        }
+        .timer-bar-inner {
+            transition: width 1s linear;
+        }
+        .correct-flash { animation: flash-green 0.5s ease; }
+        @keyframes flash-green {
+            0%, 100% { background-color: rgba(25, 29, 78, 0.6); }
+            50% { background-color: rgba(16, 185, 129, 0.6); }
+        }
+        .incorrect-flash { animation: flash-red 0.5s ease; }
+        @keyframes flash-red {
+            0%, 100% { background-color: rgba(25, 29, 78, 0.6); }
+            50% { background-color: rgba(239, 68, 68, 0.6); }
+        }
+        .streak-icon.active {
+            animation: glow 1.5s infinite alternate;
+        }
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 2px #ff9800) drop-shadow(0 0 5px #ff9800); }
+            to { filter: drop-shadow(0 0 8px #ffc107) drop-shadow(0 0 15px #ffc107); }
+        }
+    </style>
+</head>
+<body class="space-bg text-white min-h-screen flex items-center justify-center p-4">
+
+    <div id="game-container" class="w-full max-w-2xl mx-auto">
+
+        <!-- Mode Selection Screen -->
+        <div id="mode-selection-screen" class="text-center p-8 rounded-2xl glass-panel">
+            <h1 class="text-4xl md:text-5xl font-orbitron font-bold mb-6">Select Your Mission</h1>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button id="select-quiz-mode" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl text-xl btn-3d">Quiz Mode</button>
+                <button id="select-time-attack-mode" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl text-xl btn-3d">Time Attack</button>
+            </div>
+        </div>
+
+        <!-- Quiz Settings Screen -->
+        <div id="quiz-settings-screen" class="hidden text-center p-8 rounded-2xl glass-panel">
+            <h1 class="text-4xl md:text-5xl font-orbitron font-bold mb-6">Quiz Mode Setup</h1>
+            <p class="mb-8 text-lg">Choose your mission length:</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button class="question-choice-btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl text-xl btn-3d" data-questions="10">10 Questions</button>
+                <button class="question-choice-btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl text-xl btn-3d" data-questions="20">20 Questions</button>
+                <button class="question-choice-btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl text-xl btn-3d" data-questions="25">25 Questions</button>
+            </div>
+        </div>
+
+        <!-- Time Attack Settings Screen -->
+        <div id="time-attack-settings-screen" class="hidden text-center p-8 rounded-2xl glass-panel">
+            <h1 class="text-4xl md:text-5xl font-orbitron font-bold mb-6">Time Attack Setup</h1>
+            <p class="mb-8 text-lg">How long is your mission?</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button class="time-choice-btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl text-xl btn-3d" data-time="60">60 Seconds</button>
+                <button class="time-choice-btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl text-xl btn-3d" data-time="90">90 Seconds</button>
+                <button class="time-choice-btn bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-xl text-xl btn-3d" data-time="120">120 Seconds</button>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="hidden text-center p-8 rounded-2xl glass-panel">
+            <h1 class="text-4xl md:text-5xl font-orbitron font-bold mb-2">Mathronaut</h1>
+            <h2 class="text-2xl md:text-3xl font-orbitron mb-6 text-purple-300">Space Mission</h2>
+            <p id="start-screen-text" class="mb-8 text-lg"></p>
+            <button id="start-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-10 rounded-xl text-2xl btn-3d">Start Mission</button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden p-6 md:p-8 rounded-2xl glass-panel">
+            <div class="flex justify-between items-center mb-4">
+                <div id="quiz-mode-display" class="font-orbitron text-lg">Question <span id="question-count">1</span>/<span id="total-questions-display">10</span></div>
+                <div id="time-attack-display" class="hidden font-orbitron text-lg">Time Left: <span id="main-timer-display">60</span>s</div>
+                <div class="font-orbitron text-lg flex items-center gap-2">
+                    Score: <span id="score-count">0</span>
+                    <div id="streak-display" class="flex items-center gap-1 hidden">
+                        <svg class="w-6 h-6 streak-icon" viewBox="0 0 24 24" fill="orange"><path d="M11.984 1.5c-1.84 2.4-1.84 5.385 0 7.785 1.545 2.01 3.96 3.105 6.51 3.105 1.26 0 2.445-.285 3.525-.795-1.155 3.99-4.56 6.9-8.52 6.9s-7.365-2.91-8.52-6.9c1.08.51 2.265.795 3.525.795 2.55 0 4.965-1.095 6.51-3.105C16.324 4.5 14.824 1.5 11.984 1.5z"/></svg>
+                        <span id="streak-count" class="font-bold"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-full bg-gray-700 rounded-full h-4 mb-6 border-2 border-purple-400">
+                <div id="timer-bar" class="bg-gradient-to-r from-green-400 to-cyan-500 h-full rounded-full timer-bar-inner" style="width: 100%;"></div>
+            </div>
+
+            <div class="text-center my-8 md:my-12">
+                <p class="text-5xl md:text-7xl font-orbitron font-bold" id="question-text">5 x 8</p>
+            </div>
+
+            <form id="answer-form" class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <input type="number" id="answer-input" class="text-black text-2xl font-bold text-center w-full sm:w-48 p-4 rounded-lg border-4 border-transparent focus:border-purple-500 focus:outline-none" autocomplete="off">
+                <button type="submit" class="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-4 px-8 rounded-xl text-xl btn-3d" style="box-shadow: 0 6px 0 0 #227a85;">Submit</button>
+            </form>
+        </div>
+
+        <!-- End Screen -->
+        <div id="end-screen" class="hidden text-center p-8 rounded-2xl glass-panel">
+            <h1 class="text-4xl md:text-5xl font-orbitron font-bold mb-4" id="end-title">Mission Complete!</h1>
+            <p class="text-2xl mb-2">Your Final Score:</p>
+            <p class="text-7xl font-orbitron font-bold mb-6" id="final-score">0</p>
+            <p class="text-xl mb-8" id="end-message">Great job!</p>
+            <button id="play-again-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-10 rounded-xl text-2xl btn-3d">Play Again</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const allScreens = document.querySelectorAll('.glass-panel');
+        const modeSelectionScreen = document.getElementById('mode-selection-screen');
+        const quizSettingsScreen = document.getElementById('quiz-settings-screen');
+        const timeAttackSettingsScreen = document.getElementById('time-attack-settings-screen');
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const endScreen = document.getElementById('end-screen');
+
+        const selectQuizModeBtn = document.getElementById('select-quiz-mode');
+        const selectTimeAttackModeBtn = document.getElementById('select-time-attack-mode');
+        const questionChoiceBtns = document.querySelectorAll('.question-choice-btn');
+        const timeChoiceBtns = document.querySelectorAll('.time-choice-btn');
+        const startBtn = document.getElementById('start-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        const startScreenText = document.getElementById('start-screen-text');
+        const quizModeDisplay = document.getElementById('quiz-mode-display');
+        const timeAttackDisplay = document.getElementById('time-attack-display');
+        const mainTimerDisplay = document.getElementById('main-timer-display');
+        const questionCountEl = document.getElementById('question-count');
+        const totalQuestionsDisplayEl = document.getElementById('total-questions-display');
+        const scoreCountEl = document.getElementById('score-count');
+        const streakDisplay = document.getElementById('streak-display');
+        const streakCountEl = document.getElementById('streak-count');
+        const streakIcon = document.querySelector('.streak-icon');
+        const timerBar = document.getElementById('timer-bar');
+        const questionTextEl = document.getElementById('question-text');
+        const answerForm = document.getElementById('answer-form');
+        const answerInput = document.getElementById('answer-input');
+
+        const finalScoreEl = document.getElementById('final-score');
+        const endTitleEl = document.getElementById('end-title');
+        const endMessageEl = document.getElementById('end-message');
+
+        // --- Game State ---
+        let score, currentQuestionIndex, totalQuestions, questions, streak;
+        let gameMode; // 'quiz' or 'timeAttack'
+        let totalTime; // for time attack
+        let questionTimer, questionTimerInterval, mainTimerInterval;
+        const questionTimeLimit = 10; // seconds
+
+        // --- Sound Synthesis (Tone.js) ---
+        let synth;
+        function setupSounds() {
+            synth = new Tone.Synth().toDestination();
+            // Add a reverb for a spacey feel
+            const reverb = new Tone.Reverb(1.5).toDestination();
+            synth.connect(reverb);
+        }
+
+        const playClickSound = () => synth?.triggerAttackRelease("C5", "8n");
+        const playStartSound = () => synth?.triggerAttackRelease("C4", "8n", Tone.now() + 0.1);
+        const playCorrectSound = () => synth?.triggerAttackRelease("G5", "8n");
+        const playIncorrectSound = () => synth?.triggerAttackRelease("C3", "8n");
+
+        // --- Event Listeners ---
+        function initEventListeners() {
+            selectQuizModeBtn.addEventListener('click', () => selectMode('quiz'));
+            selectTimeAttackModeBtn.addEventListener('click', () => selectMode('timeAttack'));
+            questionChoiceBtns.forEach(btn => btn.addEventListener('click', selectQuizOptions));
+            timeChoiceBtns.forEach(btn => btn.addEventListener('click', selectTimeAttackOptions));
+            startBtn.addEventListener('click', startGame);
+            playAgainBtn.addEventListener('click', resetToMainMenu);
+            answerForm.addEventListener('submit', handleAnswerSubmit);
+            document.body.addEventListener('click', async () => {
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                    setupSounds();
+                }
+            }, { once: true });
+        }
+
+        // --- Navigation and Setup ---
+        function showScreen(screen) {
+            allScreens.forEach(s => s.classList.add('hidden'));
+            screen.classList.remove('hidden');
+        }
+
+        function selectMode(mode) {
+            playClickSound();
+            gameMode = mode;
+            if (mode === 'quiz') {
+                showScreen(quizSettingsScreen);
+            } else {
+                showScreen(timeAttackSettingsScreen);
+            }
+        }
+
+        function selectQuizOptions(e) {
+            playClickSound();
+            totalQuestions = parseInt(e.target.dataset.questions, 10);
+            startScreenText.textContent = `Your mission: solve ${totalQuestions} multiplication problems. You have 10 seconds for each problem. Good luck!`;
+            showScreen(startScreen);
+        }
+
+        function selectTimeAttackOptions(e) {
+            playClickSound();
+            totalTime = parseInt(e.target.dataset.time, 10);
+            startScreenText.textContent = `Your mission: solve as many problems as you can in ${totalTime} seconds. Good luck!`;
+            showScreen(startScreen);
+        }
+
+        function resetToMainMenu() {
+            playClickSound();
+            showScreen(modeSelectionScreen);
+        }
+
+        // --- Game Core Logic ---
+        function generateQuestions(count) {
+            const newQuestions = [];
+            for (let i = 0; i < count; i++) {
+                const num1 = Math.floor(Math.random() * 11) + 2;
+                const num2 = Math.floor(Math.random() * 11) + 2;
+                newQuestions.push({ text: `${num1} x ${num2}`, answer: num1 * num2 });
+            }
+            return newQuestions;
+        }
+
+        function startGame() {
+            playStartSound();
+            score = 0;
+            streak = 0;
+            currentQuestionIndex = 0;
+
+            scoreCountEl.textContent = score;
+            updateStreakDisplay();
+
+            if (gameMode === 'quiz') {
+                questions = generateQuestions(totalQuestions);
+                quizModeDisplay.classList.remove('hidden');
+                timeAttackDisplay.classList.add('hidden');
+                totalQuestionsDisplayEl.textContent = totalQuestions;
+            } else { // timeAttack
+                questions = generateQuestions(100); // Generate plenty of questions
+                quizModeDisplay.classList.add('hidden');
+                timeAttackDisplay.classList.remove('hidden');
+                startMainTimer();
+            }
+
+            showScreen(quizScreen);
+            loadNextQuestion();
+        }
+
+        function loadNextQuestion() {
+            if (gameMode === 'quiz' && currentQuestionIndex >= totalQuestions) {
+                endGame();
+                return;
+            }
+
+            resetQuestionTimer();
+            answerInput.value = '';
+            answerInput.focus();
+
+            const question = questions[currentQuestionIndex];
+            questionCountEl.textContent = currentQuestionIndex + 1;
+            questionTextEl.textContent = question.text;
+
+            questionTimer = questionTimeLimit;
+            questionTimerInterval = setInterval(updateQuestionTimer, 1000);
+        }
+
+        function handleAnswerSubmit(e) {
+            e.preventDefault();
+            const userAnswer = parseInt(answerInput.value, 10);
+            if (isNaN(userAnswer)) return;
+
+            const correctAnswer = questions[currentQuestionIndex].answer;
+
+            if (userAnswer === correctAnswer) {
+                playCorrectSound();
+                score++;
+                streak++;
+                scoreCountEl.textContent = score;
+                flashFeedback(true);
+            } else {
+                playIncorrectSound();
+                streak = 0;
+                flashFeedback(false);
+            }
+            updateStreakDisplay();
+            currentQuestionIndex++;
+            loadNextQuestion();
+        }
+
+        // --- Timers and Updates ---
+        function updateQuestionTimer() {
+            questionTimer--;
+            const timerWidth = (questionTimer / questionTimeLimit) * 100;
+            timerBar.style.width = `${timerWidth}%`;
+
+            if (questionTimer <= 0) {
+                playIncorrectSound();
+                streak = 0;
+                updateStreakDisplay();
+                flashFeedback(false);
+                currentQuestionIndex++;
+                loadNextQuestion();
+            }
+        }
+
+        function startMainTimer() {
+            let timeLeft = totalTime;
+            mainTimerDisplay.textContent = timeLeft;
+            mainTimerInterval = setInterval(() => {
+                timeLeft--;
+                mainTimerDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function resetQuestionTimer() {
+            clearInterval(questionTimerInterval);
+            timerBar.style.transition = 'none';
+            timerBar.style.width = '100%';
+            timerBar.offsetHeight;
+            timerBar.style.transition = 'width 1s linear';
+        }
+
+        function updateStreakDisplay() {
+            if (streak > 1) {
+                streakDisplay.classList.remove('hidden');
+                streakCountEl.textContent = streak;
+                streakIcon.classList.add('active');
+                // Adjust glow based on streak
+                const glowIntensity = Math.min(streak * 2, 20);
+                streakIcon.style.filter = `drop-shadow(0 0 ${glowIntensity/2}px #ff9800) drop-shadow(0 0 ${glowIntensity}px #ffc107)`;
+            } else {
+                streakDisplay.classList.add('hidden');
+                streakIcon.classList.remove('active');
+                streakIcon.style.filter = 'none';
+            }
+        }
+
+        function flashFeedback(isCorrect) {
+            const panel = quizScreen;
+            const className = isCorrect ? 'correct-flash' : 'incorrect-flash';
+            panel.classList.add(className);
+            setTimeout(() => panel.classList.remove(className), 500);
+        }
+
+        // --- End Game ---
+        function endGame() {
+            clearInterval(questionTimerInterval);
+            clearInterval(mainTimerInterval);
+
+            showScreen(endScreen);
+            finalScoreEl.textContent = score;
+
+            if (gameMode === 'quiz') {
+                const scorePercentage = (score / totalQuestions) * 100;
+                if (scorePercentage >= 80) {
+                    endTitleEl.textContent = '🏆 Cosmic Commander! 🏆';
+                    endMessageEl.textContent = 'Mission success! Your skills are out of this world!';
+                } else if (scorePercentage >= 50) {
+                    endTitleEl.textContent = '⭐ Star Pilot! ⭐';
+                    endMessageEl.textContent = 'Great job, Pilot! You navigated the galaxy with real skill.';
+                } else {
+                    endTitleEl.textContent = '🚀 Rocket Rookie! 🚀';
+                    endMessageEl.textContent = 'An excellent first mission! Every explorer starts somewhere.';
+                }
+            } else { // timeAttack
+                 if (score >= 20) {
+                    endTitleEl.textContent = '🏆 Speed Demon! 🏆';
+                    endMessageEl.textContent = `You answered ${score} questions correctly in ${totalTime} seconds! Incredible!`;
+                } else if (score >= 10) {
+                    endTitleEl.textContent = '⭐ Comet Chaser! ⭐';
+                    endMessageEl.textContent = `Nice work! You got ${score} correct answers. A truly speedy performance!`;
+                } else {
+                    endTitleEl.textContent = '🚀 Launch Pad Learner! 🚀';
+                    endMessageEl.textContent = `Good effort! You scored ${score}. Keep practicing to get faster!`;
+                }
+            }
+        }
+
+        // --- Initialisation ---
+        initEventListeners();
+
+    </script>
+</body>
+</html>
