@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentence Superheroes: Parts of Speech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1a202c;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .font-bangers {
+            font-family: 'Bangers', cursive;
+        }
+        .screen {
+            max-width: 900px;
+            width: 90%;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #2d3748;
+            border-radius: 20px;
+            border: 4px solid #4a5568;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 15px rgba(0,0,0,0.5);
+        }
+        #game-container, #end-screen {
+            display: none;
+        }
+        .sentence-container {
+            background-color: #1a202c;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 2rem;
+            min-height: 80px;
+        }
+        .word-token {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background: linear-gradient(145deg, #4299e1, #3182ce);
+            color: white;
+            border-radius: 8px;
+            cursor: grab;
+            transition: all 0.2s ease-in-out;
+            user-select: none;
+            border: 2px solid #63b3ed;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .word-token.dragging {
+            opacity: 0.5;
+            transform: scale(0.9);
+            cursor: grabbing;
+        }
+        .word-token.placed {
+           display: block; /* Stack vertically in bins */
+           cursor: default;
+        }
+        .word-token.correct {
+           background: linear-gradient(145deg, #68d391, #48bb78);
+           border-color: #9ae6b4;
+           animation: pulse 0.5s;
+        }
+        .word-token.incorrect {
+           background: linear-gradient(145deg, #e53e3e, #c53030);
+           border-color: #fc8181;
+           animation: shake 0.5s;
+        }
+        .speech-bins-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        .speech-bin {
+            background-color: rgba(74, 85, 104, 0.5);
+            border: 2px dashed #a0aec0;
+            border-radius: 10px;
+            padding: 1rem;
+            min-height: 200px;
+            transition: all 0.3s ease;
+        }
+        .speech-bin h3 {
+            text-align: center;
+            font-weight: bold;
+            color: #cbd5e0;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+        .speech-bin.over {
+            background-color: rgba(237, 137, 54, 0.5);
+            border-style: solid;
+        }
+        .speech-bin-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .btn {
+            background: linear-gradient(145deg, #ed8936, #dd6b20);
+            border: 2px solid #f6ad55;
+            color: white;
+            font-weight: bold;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .btn:disabled {
+            background: #4a5568;
+            border-color: #718096;
+            cursor: not-allowed;
+            transform: scale(1);
+        }
+        .mission-select label {
+            font-size: 1.2rem;
+            margin-right: 1rem;
+        }
+        .mission-select input {
+            width: 80px;
+            padding: 0.5rem;
+            border-radius: 8px;
+            border: 2px solid #4a5568;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        .game-controls {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        #mission-review {
+            margin-top: 2rem;
+            text-align: left;
+            background-color: #1a202c;
+            padding: 1rem;
+            border-radius: 10px;
+            max-height: 40vh;
+            overflow-y: auto;
+        }
+        .review-item {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #4a5568;
+        }
+        .review-item:last-child {
+            border-bottom: none;
+        }
+        .review-item h4 {
+            font-weight: bold;
+            color: #a0aec0;
+            margin-bottom: 1rem;
+        }
+        .review-word-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 4px;
+        }
+        .review-word-wrapper .word-token {
+            cursor: default;
+            margin: 2px;
+        }
+        .review-explanation {
+            margin-left: 10px;
+            font-size: 0.9rem;
+            color: #f6ad55;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen text-center">
+        <h1 class="font-bangers text-5xl md:text-6xl text-yellow-400 tracking-wider" style="text-shadow: 3px 3px 0 #000;">Mission Control</h1>
+        <p class="text-xl my-6 text-blue-300">How many missions will you accept, Hero?</p>
+        <div class="mission-select my-8">
+            <label for="mission-count">Sentences:</label>
+            <input type="number" id="mission-count" value="5" min="1" max="20">
+        </div>
+        <button id="start-game-btn" class="btn">Start Mission!</button>
+    </div>
+
+    <!-- Game Container -->
+    <div id="game-container" class="screen">
+        <header class="text-center mb-6">
+            <h1 class="font-bangers text-5xl md:text-6xl text-yellow-400 tracking-wider" style="text-shadow: 3px 3px 0 #000;">Sentence Superheroes</h1>
+            <p class="text-lg text-blue-300">Sort the words into the correct Power Silos!</p>
+        </header>
+        <main id="game-area">
+            <div class="sentence-container" id="sentence-container"></div>
+            <div class="speech-bins-container" id="speech-bins-container"></div>
+            <div class="game-controls">
+                <button id="check-answers-btn" class="btn">Check Answers</button>
+                <button id="next-level-btn" class="btn" style="display: none;">Next Mission</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- End Screen -->
+    <div id="end-screen" class="screen text-center">
+        <h1 class="font-bangers text-5xl md:text-6xl text-green-400 tracking-wider" style="text-shadow: 3px 3px 0 #000;">Mission Complete!</h1>
+        <p class="text-2xl my-6 text-gray-200">Here's your score:</p>
+        <p id="final-score" class="text-4xl font-bold my-8 text-white"></p>
+        <div id="mission-review"></div>
+        <button id="play-again-btn" class="btn mt-8">Play Again</button>
+    </div>
+
+    <script>
+        // --- DOM ELEMENTS ---
+        const startScreen = document.getElementById('start-screen');
+        const gameContainer = document.getElementById('game-container');
+        const endScreen = document.getElementById('end-screen');
+        const startGameBtn = document.getElementById('start-game-btn');
+        const missionCountInput = document.getElementById('mission-count');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const missionReviewContainer = document.getElementById('mission-review');
+
+        const sentenceContainer = document.getElementById('sentence-container');
+        const speechBinsContainer = document.getElementById('speech-bins-container');
+        const checkAnswersBtn = document.getElementById('check-answers-btn');
+        const nextLevelBtn = document.getElementById('next-level-btn');
+
+        // --- GAME STATE ---
+        const allLevels = [
+            { words: [ { word: 'The', type: 'article' }, { word: 'happy', type: 'adjective' }, { word: 'cat', type: 'noun' }, { word: 'sleeps', type: 'verb' } ], bins: ['noun', 'verb', 'adjective', 'article'] },
+            { words: [ { word: 'A', type: 'article' }, { word: 'big', type: 'adjective' }, { word: 'dog', type: 'noun' }, { word: 'runs', type: 'verb' }, { word: 'quickly', type: 'adverb' } ], bins: ['noun', 'verb', 'adjective', 'adverb', 'article'] },
+            { words: [ { word: 'She', type: 'pronoun' }, { word: 'carefully', type: 'adverb' }, { word: 'reads', type: 'verb' }, { word: 'old', type: 'adjective' }, { word: 'books', type: 'noun' } ], bins: ['pronoun', 'noun', 'verb', 'adjective', 'adverb'] },
+            { words: [ { word: 'They', type: 'pronoun' }, { word: 'play', type: 'verb' }, { word: 'outside', type: 'adverb' } ], bins: ['pronoun', 'verb', 'adverb'] },
+            { words: [ { word: 'An', type: 'article' }, { word: 'apple', type: 'noun' }, { word: 'is', type: 'verb' }, { word: 'red', type: 'adjective' } ], bins: ['article', 'noun', 'verb', 'adjective'] },
+            { words: [ { word: 'A', type: 'article' }, { word: 'fast', type: 'adjective' }, { word: 'plane', type: 'noun' }, { word: 'flies', type: 'verb' }, { word: 'high', type: 'adverb' } ], bins: ['article', 'adjective', 'noun', 'verb', 'adverb'] },
+            { words: [ { word: 'He', type: 'pronoun' }, { word: 'quietly', type: 'adverb' }, { word: 'opened', type: 'verb' }, { word: 'the', type: 'article' }, { word: 'door', type: 'noun' } ], bins: ['pronoun', 'adverb', 'verb', 'article', 'noun'] },
+            { words: [ { word: 'Green', type: 'adjective' }, { word: 'frogs', type: 'noun' }, { word: 'jump', type: 'verb' }, { word: 'far', type: 'adverb' } ], bins: ['adjective', 'noun', 'verb', 'adverb'] },
+            { words: [ { word: 'We', type: 'pronoun' }, { word: 'eat', type: 'verb' }, { word: 'fresh', type: 'adjective' }, { word: 'fruit', type: 'noun' }, { word: 'daily', type: 'adverb' } ], bins: ['pronoun', 'verb', 'adjective', 'noun', 'adverb'] },
+            { words: [ { word: 'The', type: 'article' }, { word: 'small', type: 'adjective' }, { word: 'boat', type: 'noun' }, { word: 'sails', type: 'verb' }, { word: 'smoothly', type: 'adverb' } ], bins: ['article', 'adjective', 'noun', 'verb', 'adverb'] },
+            { words: [ { word: 'She', type: 'pronoun' }, { word: 'is', type: 'verb' }, { word: 'a', type: 'article' }, { word: 'talented', type: 'adjective' }, { word: 'artist', type: 'noun' } ], bins: ['pronoun', 'verb', 'article', 'adjective', 'noun'] },
+            { words: [ { word: 'Bright', type: 'adjective' }, { word: 'stars', type: 'noun' }, { word: 'shine', type: 'verb' }, { word: 'at', type: 'preposition' }, { word: 'night', type: 'noun' } ], bins: ['adjective', 'noun', 'verb', 'preposition'] },
+            { words: [ { word: 'The', type: 'article' }, { word: 'tall', type: 'adjective' }, { word: 'giraffe', type: 'noun' }, { word: 'eats', type: 'verb' }, { word: 'leaves', type: 'noun' } ], bins: ['article', 'adjective', 'noun', 'verb'] },
+            { words: [ { word: 'I', type: 'pronoun' }, { word: 'walked', type: 'verb' }, { word: 'to', type: 'preposition' }, { word: 'the', type: 'article' }, { word: 'park', type: 'noun' } ], bins: ['pronoun', 'verb', 'preposition', 'article', 'noun'] },
+            { words: [ { word: 'My', type: 'adjective' }, { word: 'new', type: 'adjective' }, { word: 'puppy', type: 'noun' }, { word: 'plays', type: 'verb' }, { word: 'happily', type: 'adverb' } ], bins: ['adjective', 'noun', 'verb', 'adverb'] },
+            { words: [ { word: 'A', type: 'article' }, { word: 'loud', type: 'adjective' }, { word: 'lion', type: 'noun' }, { word: 'roared', type: 'verb' } ], bins: ['article', 'adjective', 'noun', 'verb'] },
+            { words: [ { word: 'They', type: 'pronoun' }, { word: 'quickly', type: 'adverb' }, { word: 'finished', type: 'verb' }, { word: 'the', type: 'article' }, { word: 'race', type: 'noun' } ], bins: ['pronoun', 'adverb', 'verb', 'article', 'noun'] },
+            { words: [ { word: 'Cold', type: 'adjective' }, { word: 'water', type: 'noun' }, { word: 'feels', type: 'verb' }, { word: 'good', type: 'adjective' } ], bins: ['adjective', 'noun', 'verb'] },
+            { words: [ { word: 'He', type: 'pronoun' }, { word: 'threw', type: 'verb' }, { word: 'the', type: 'article' }, { word: 'red', type: 'adjective' }, { word: 'ball', type: 'noun' } ], bins: ['pronoun', 'verb', 'article', 'adjective', 'noun'] },
+            { words: [ { word: 'The', type: 'article' }, { word: 'sun', type: 'noun' }, { word: 'sets', type: 'verb' }, { word: 'in', type: 'preposition' }, { word: 'the', type: 'article' }, { word: 'west', type: 'noun' } ], bins: ['article', 'noun', 'verb', 'preposition'] }
+        ];
+        let currentLevelIndex = 0;
+        let totalMissions = 0;
+        let missionsCompleted = 0;
+        let totalScore = 0;
+        let totalPossibleScore = 0;
+        let activeLevels = [];
+        let gameResults = [];
+
+        // --- GAME FLOW ---
+        startGameBtn.addEventListener('click', () => {
+            totalMissions = parseInt(missionCountInput.value, 10);
+            if (totalMissions > allLevels.length) totalMissions = allLevels.length;
+            missionsCompleted = 0;
+            totalScore = 0;
+            totalPossibleScore = 0;
+            gameResults = [];
+
+            activeLevels = [...allLevels].sort(() => 0.5 - Math.random()).slice(0, totalMissions);
+
+            currentLevelIndex = 0;
+            startScreen.style.display = 'none';
+            endScreen.style.display = 'none';
+            gameContainer.style.display = 'block';
+            loadLevel(currentLevelIndex);
+        });
+
+        nextLevelBtn.addEventListener('click', () => {
+            missionsCompleted++;
+            currentLevelIndex++;
+
+            if (missionsCompleted < totalMissions) {
+                loadLevel(currentLevelIndex);
+            } else {
+                showEndScreen();
+            }
+        });
+
+        playAgainBtn.addEventListener('click', () => {
+            endScreen.style.display = 'none';
+            startScreen.style.display = 'block';
+        });
+
+        function showEndScreen() {
+            gameContainer.style.display = 'none';
+            finalScoreDisplay.textContent = `${totalScore} / ${totalPossibleScore}`;
+
+            missionReviewContainer.innerHTML = '<h2 class="font-bangers text-3xl text-yellow-400 tracking-wider text-center mb-4">Mission Debriefing</h2>';
+            gameResults.forEach((missionResult, index) => {
+                const level = activeLevels[index];
+                const reviewItem = document.createElement('div');
+                reviewItem.className = 'review-item';
+
+                let sentence = level.words.map(w => w.word).join(' ');
+                reviewItem.innerHTML = `<h4>Mission ${index + 1}: "${sentence}"</h4>`;
+
+                const reviewBinsContainer = document.createElement('div');
+                reviewBinsContainer.className = 'speech-bins-container';
+
+                level.bins.forEach(binType => {
+                    const binDiv = document.createElement('div');
+                    binDiv.className = 'speech-bin';
+                    binDiv.innerHTML = `<h3>${binType}</h3>`;
+                    const binContent = document.createElement('div');
+                    binContent.className = 'speech-bin-content';
+
+                    const wordsInThisBin = missionResult.filter(r => r.placedIn === binType);
+                    if (wordsInThisBin.length > 0) {
+                        wordsInThisBin.forEach(wordResult => {
+                            const wrapper = document.createElement('div');
+                            wrapper.className = 'review-word-wrapper';
+
+                            const wordToken = document.createElement('div');
+                            wordToken.className = 'word-token';
+                            wordToken.textContent = wordResult.word;
+
+                            if (wordResult.placedIn === wordResult.correctType) {
+                                wordToken.classList.add('correct');
+                            } else {
+                                wordToken.classList.add('incorrect');
+                                const explanation = document.createElement('span');
+                                explanation.className = 'review-explanation';
+                                explanation.textContent = `(is an ${wordResult.correctType})`;
+                                wrapper.appendChild(explanation);
+                            }
+                            wrapper.prepend(wordToken);
+                            binContent.appendChild(wrapper);
+                        });
+                    }
+                    binDiv.appendChild(binContent);
+                    reviewBinsContainer.appendChild(binDiv);
+                });
+                reviewItem.appendChild(reviewBinsContainer);
+                missionReviewContainer.appendChild(reviewItem);
+            });
+
+            endScreen.style.display = 'block';
+        }
+
+        // --- GAME LOGIC ---
+        function loadLevel(levelIndex) {
+            const level = activeLevels[levelIndex];
+            totalPossibleScore += level.words.length;
+
+            checkAnswersBtn.style.display = 'inline-block';
+            nextLevelBtn.style.display = 'none';
+            nextLevelBtn.textContent = "Next Mission";
+
+
+            sentenceContainer.innerHTML = '';
+            speechBinsContainer.innerHTML = '';
+
+            level.words.forEach(part => {
+                const wordEl = document.createElement('div');
+                wordEl.className = 'word-token';
+                wordEl.textContent = part.word;
+                wordEl.draggable = true;
+                wordEl.dataset.type = part.type;
+                sentenceContainer.appendChild(wordEl);
+            });
+
+            const shuffledBins = [...level.bins].sort(() => Math.random() - 0.5);
+
+            shuffledBins.forEach(binType => {
+                const bin = document.createElement('div');
+                bin.className = 'speech-bin';
+                bin.dataset.type = binType;
+                const title = document.createElement('h3');
+                title.textContent = binType;
+                const contentArea = document.createElement('div');
+                contentArea.className = 'speech-bin-content';
+                bin.appendChild(title);
+                bin.appendChild(contentArea);
+                speechBinsContainer.appendChild(bin);
+            });
+
+            addDragAndDropHandlers();
+        }
+
+        function addDragAndDropHandlers() {
+            const words = document.querySelectorAll('.word-token');
+            const bins = document.querySelectorAll('.speech-bin');
+            let draggedItem = null;
+
+            words.forEach(word => {
+                word.addEventListener('dragstart', () => {
+                    if (word.classList.contains('correct') || word.classList.contains('incorrect')) return;
+                    draggedItem = word;
+                    setTimeout(() => word.classList.add('dragging'), 0);
+                });
+                word.addEventListener('dragend', () => {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                });
+            });
+
+            [...bins, sentenceContainer].forEach(container => {
+                container.addEventListener('dragover', (e) => { e.preventDefault(); if(container.classList.contains('speech-bin')) container.classList.add('over'); });
+                container.addEventListener('dragleave', () => { if(container.classList.contains('speech-bin')) container.classList.remove('over'); });
+                container.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if(container.classList.contains('speech-bin')) container.classList.remove('over');
+                    if (!draggedItem) return;
+
+                    const contentArea = container.classList.contains('speech-bin') ? container.querySelector('.speech-bin-content') : container;
+                    contentArea.appendChild(draggedItem);
+                    draggedItem.classList.add('placed');
+                });
+            });
+        }
+
+        checkAnswersBtn.addEventListener('click', () => {
+            const bins = document.querySelectorAll('.speech-bin');
+            let roundScore = 0;
+            let roundResults = [];
+
+            bins.forEach(bin => {
+                const binType = bin.dataset.type;
+                const wordsInBin = bin.querySelectorAll('.word-token');
+
+                wordsInBin.forEach(word => {
+                    const wordType = word.dataset.type;
+                    roundResults.push({ word: word.textContent, placedIn: binType, correctType: wordType });
+                    if (binType === wordType) {
+                        word.classList.add('correct');
+                        roundScore++;
+                    } else {
+                        word.classList.add('incorrect');
+                    }
+                    word.draggable = false;
+                });
+            });
+
+            const wordsLeft = sentenceContainer.querySelectorAll('.word-token');
+            wordsLeft.forEach(word => {
+                word.classList.add('incorrect');
+                word.draggable = false;
+                roundResults.push({ word: word.textContent, placedIn: 'un-sorted', correctType: word.dataset.type });
+            });
+
+            gameResults.push(roundResults);
+            totalScore += roundScore;
+            checkAnswersBtn.style.display = 'none';
+            nextLevelBtn.style.display = 'inline-block';
+
+            if (missionsCompleted + 1 >= totalMissions) {
+                nextLevelBtn.textContent = "Finish Mission";
+            }
+        });
+
+    </script>
+</body>
+</html>

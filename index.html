@@ -1,1 +1,98 @@
-<h1>Hello there</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awesome Educational Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .game-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto px-4 py-12 sm:py-16 md:py-24">
+
+        <header class="text-center mb-12 md:mb-20">
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900">
+                Welcome to <span class="text-indigo-600">Awesome Games</span>!
+            </h1>
+            <p class="mt-4 text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+                Fun, engaging, and educational games designed to make learning an adventure.
+            </p>
+        </header>
+
+        <!-- Games Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
+
+            <!-- Gemstone Division Game -->
+            <div class="game-card bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
+                <div class="p-8 flex-grow">
+                    <div class="flex items-center justify-center h-24 w-24 rounded-full bg-purple-100 mx-auto mb-6">
+                        <i class="fas fa-gem text-4xl text-purple-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-center text-gray-900 mb-3">Gemstone Division</h2>
+                    <p class="text-center text-gray-600 mb-6 flex-grow">
+                        Sharpen your division skills by sorting and dividing precious gemstones. Become a master of math!
+                    </p>
+                </div>
+                <div class="p-6 bg-gray-50">
+                     <a href="/games/division" class="block w-full text-center bg-purple-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors duration-300">
+                        Play Game
+                    </a>
+                </div>
+            </div>
+
+            <!-- Space Multiplication Game -->
+            <div class="game-card bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
+                <div class="p-8 flex-grow">
+                    <div class="flex items-center justify-center h-24 w-24 rounded-full bg-blue-100 mx-auto mb-6">
+                        <i class="fas fa-rocket text-4xl text-blue-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-center text-gray-900 mb-3">Space Multiplication</h2>
+                    <p class="text-center text-gray-600 mb-6 flex-grow">
+                        Blast off into the cosmos and conquer multiplication facts to fuel your spaceship across the galaxy.
+                    </p>
+                </div>
+                <div class="p-6 bg-gray-50">
+                    <a href="/games/multiplication" class="block w-full text-center bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-300">
+                        Play Game
+                    </a>
+                </div>
+            </div>
+
+            <!-- Superhero Sentence Diagramming -->
+            <div class="game-card bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col">
+                <div class="p-8 flex-grow">
+                    <div class="flex items-center justify-center h-24 w-24 rounded-full bg-red-100 mx-auto mb-6">
+                        <i class="fas fa-shield-alt text-4xl text-red-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-center text-gray-900 mb-3">Superhero Sentences</h2>
+                    <p class="text-center text-gray-600 mb-6 flex-grow">
+                        Become a grammar superhero! Learn to diagram sentences to unleash your writing superpowers.
+                    </p>
+                </div>
+                 <div class="p-6 bg-gray-50">
+                    <a href="/games/diagram" class="block w-full text-center bg-red-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-red-700 transition-colors duration-300">
+                        Play Game
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
