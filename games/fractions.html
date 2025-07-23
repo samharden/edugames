@@ -197,7 +197,7 @@
 
             scoreEl.textContent = score;
             updateProblemCounter();
-            serveButton.disabled = false; // **FIX**: Re-enable button on new game
+            serveButton.disabled = false;
 
             startScreen.style.display = 'none';
             endScreen.style.display = 'none';
@@ -245,14 +245,12 @@
             mainSvg = createSvg();
             gameBoard.appendChild(mainSvg);
 
-            // Draw the plate FIRST so it's in the background
             const plateCircle = createCircle(plateOrigin.x, plateOrigin.y, dropRadius, '#f1f5f9');
             plateCircle.setAttribute('stroke', '#cbd5e1');
             plateCircle.setAttribute('stroke-width', '4');
             plateCircle.setAttribute('stroke-dasharray', '10,5');
             mainSvg.appendChild(plateCircle);
 
-            // Draw the pizza
             const crust = createCircle(pizzaOrigin.x, pizzaOrigin.y, 100, '#f59e0b');
             mainSvg.appendChild(crust);
             const cheese = createCircle(pizzaOrigin.x, pizzaOrigin.y, 92, '#fcd34d');
@@ -263,7 +261,6 @@
                 const sliceGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
                 sliceGroup.classList.add('pizza-slice-group');
                 sliceGroup.dataset.sliceId = i;
-                // **FIX**: Set initial transform to place it at the pizza origin
                 sliceGroup.setAttribute('transform', `translate(${pizzaOrigin.x}, ${pizzaOrigin.y})`);
 
                 const slicePath = createSlicePath(i, angleStep);
@@ -271,14 +268,17 @@
 
                 addPepperoni(sliceGroup, i, angleStep);
 
+                // **FIX**: Add listeners for both mouse and touch events
                 sliceGroup.addEventListener('mousedown', startDrag);
+                sliceGroup.addEventListener('touchstart', startDrag, { passive: false });
+
                 mainSvg.appendChild(sliceGroup);
             }
         }
 
         function createSvg() {
             const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            svg.setAttribute("viewBox", "0 0 500 250"); // Wider viewBox for both items
+            svg.setAttribute("viewBox", "0 0 500 250");
             svg.setAttribute("width", "100%");
             svg.setAttribute("height", "100%");
             svg.style.overflow = 'visible';
@@ -295,7 +295,6 @@
         }
 
         function createSlicePath(index, angleStep) {
-            // Draw slice centered at (0,0) because its group is translated
             const startAngle = index * angleStep;
             const endAngle = (index + 1) * angleStep;
             const start = polarToCartesian(0, 0, 92, endAngle);
@@ -316,7 +315,7 @@
             for(let j = 0; j < 3; j++) {
                 const radius = 40 + Math.random() * 40;
                 const angleOffset = (Math.random() - 0.5) * angleStep * 0.6;
-                const pos = polarToCartesian(0, 0, radius, midAngle + angleOffset); // Centered at 0,0
+                const pos = polarToCartesian(0, 0, radius, midAngle + angleOffset);
                 const pepperoni = createCircle(pos.x, pos.y, 5, '#be123c');
                 sliceGroup.appendChild(pepperoni);
             }
@@ -327,10 +326,19 @@
             return { x: cx + (r * Math.cos(rad)), y: cy + (r * Math.sin(rad)) };
         }
 
+        // **FIX**: Universal function to get coordinates from mouse or touch events
         function getSVGPoint(evt) {
             const pt = mainSvg.createSVGPoint();
-            pt.x = evt.clientX;
-            pt.y = evt.clientY;
+            if (evt.touches && evt.touches.length > 0) {
+                pt.x = evt.touches[0].clientX;
+                pt.y = evt.touches[0].clientY;
+            } else if (evt.changedTouches && evt.changedTouches.length > 0) {
+                 pt.x = evt.changedTouches[0].clientX;
+                 pt.y = evt.changedTouches[0].clientY;
+            } else {
+                pt.x = evt.clientX;
+                pt.y = evt.clientY;
+            }
             return pt.matrixTransform(mainSvg.getScreenCTM().inverse());
         }
 
@@ -339,15 +347,18 @@
             draggedElement = evt.currentTarget;
             isDragging = true;
             draggedElement.classList.add('dragging');
-            mainSvg.appendChild(draggedElement); // **FIX**: Bring to front of the single SVG
+            mainSvg.appendChild(draggedElement);
 
             const startPoint = getSVGPoint(evt);
             const transform = draggedElement.transform.baseVal.getItem(0);
             offset.x = startPoint.x - transform.matrix.e;
             offset.y = startPoint.y - transform.matrix.f;
 
+            // **FIX**: Add listeners for both mouse and touch events
             window.addEventListener('mousemove', drag);
+            window.addEventListener('touchmove', drag, { passive: false });
             window.addEventListener('mouseup', endDrag);
+            window.addEventListener('touchend', endDrag);
         }
 
         function drag(evt) {
@@ -363,8 +374,12 @@
             if (!isDragging || !draggedElement) return;
             isDragging = false;
             draggedElement.classList.remove('dragging');
+
+            // **FIX**: Remove all potential listeners
             window.removeEventListener('mousemove', drag);
+            window.removeEventListener('touchmove', drag);
             window.removeEventListener('mouseup', endDrag);
+            window.removeEventListener('touchend', endDrag);
 
             const coord = getSVGPoint(evt);
             const wasOnPlate = draggedElement.classList.contains('on-plate');
@@ -373,17 +388,14 @@
             const distToPizza = Math.hypot(coord.x - pizzaOrigin.x, coord.y - pizzaOrigin.y);
 
             if (distToPlate < dropRadius && !wasOnPlate) {
-                // Drop on plate
                 draggedElement.setAttribute('transform', `translate(${plateOrigin.x}, ${plateOrigin.y})`);
                 draggedElement.classList.add('on-plate');
                 slicesOnPlate++;
             } else if (distToPizza < dropRadius && wasOnPlate) {
-                // Return to pizza
                 draggedElement.setAttribute('transform', `translate(${pizzaOrigin.x}, ${pizzaOrigin.y})`);
                 draggedElement.classList.remove('on-plate');
                 slicesOnPlate--;
             } else {
-                // Snap back to original location
                 const origin = wasOnPlate ? plateOrigin : pizzaOrigin;
                 draggedElement.setAttribute('transform', `translate(${origin.x}, ${origin.y})`);
             }
